@@ -56,7 +56,9 @@ class ToolBox(object):
     def gamma_transformation(self, gamma):
         return self.image ** gamma
 
-    def median_filter(self, window_size):
+    # def median_filter(self, window_size):
+
+
 
 
 

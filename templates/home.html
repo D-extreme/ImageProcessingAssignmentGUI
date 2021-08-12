@@ -1,0 +1,47 @@
+{%extends "layout.html"%}
+{% block content %}
+<div class="home">
+    <style>
+        .outsideWrapper{
+            width:350px;
+            height: 350px;
+            margin:20px 60px;
+            border:1px solid blue;
+            display: flex;
+            justify-content: center;
+        }
+        canvas{
+            cursor:pointer;
+        }
+        canvas:hover {
+            cursor: pointer;
+        }
+    </style>
+    <h1>Image Editor</h1>
+    <p> An interactive GUI to perform various image enhancement procedures on the input image</p>
+    {% if filename %}
+        <div class="outsideWrapper">
+            <div class="insideWrapper">
+                <img id="image" src="{{ url_for('display_image', filename=filename) }}" class="coveredImage"/>
+            </div>
+        </div>
+    {% endif %}
+    <p>"Upload the Input Image"</p>
+    <form method="post" action="/" enctype="multipart/form-data">
+            <dl>
+                <p>
+                    <input type="file" name="file" autocomplete="off" required>
+                </p>
+            </dl>
+            <p>
+                <input type="submit" value="Submit">
+            </p>
+    </form>
+    {% if filename%}
+    <div>
+        <h2>Tools</h2>
+    </div>
+    {% endif %}
+</div>
+
+{%endblock%}
