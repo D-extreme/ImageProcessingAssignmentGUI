@@ -1,13 +1,17 @@
 {%extends "layout.html"%}
 {% block content %}
+ <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+ </head>
 <div class="home">
     <style>
         .outsideWrapper{
-            width:350px;
-            height: 350px;
+            width:512px;
+            height: 512px;
             margin:20px 60px;
             border:1px solid blue;
-            display: flex;
+            display: block;
+            float: right;
             justify-content: center;
         }
         canvas{
@@ -17,17 +21,22 @@
             cursor: pointer;
         }
     </style>
-    <h1>Image Editor</h1>
-    <p> An interactive GUI to perform various image enhancement procedures on the input image</p>
+    <h1 style="margin-left: 10px;">Image Editor</h1>
+    <p style="margin-left: 10px;"> An interactive GUI to perform various image enhancement procedures on the input image.
+        This GUI has been developed as a part of Assignment 1 for the course EE610: Image Processing at IIT Bombay.
+    </p>
+    <p style="margin-left: 10px;"> Accepted Input File Types: PNG, JPG, JPEG</p>
     {% if filename %}
+    <center>
         <div class="outsideWrapper">
-            <div class="insideWrapper">
-                <img id="image" src="{{ url_for('display_image', filename=filename) }}" class="coveredImage"/>
-            </div>
+                <div class="insideWrapper">
+                    <img id="image" src="{{ url_for('display_image', filename= filename) }}" class="coveredImage"/>
+                </div>
         </div>
+    </center>
     {% endif %}
-    <p>"Upload the Input Image"</p>
-    <form method="post" action="/" enctype="multipart/form-data">
+    <p style="margin-left: 20px">Upload the Input Image</p>
+    <form method="post" action="/" enctype="multipart/form-data" style="margin-left:20px">
             <dl>
                 <p>
                     <input type="file" name="file" autocomplete="off" required>
@@ -38,8 +47,197 @@
             </p>
     </form>
     {% if filename%}
-    <div>
-        <h2>Tools</h2>
+    <div style="margin-left:10px">
+        <button id="undo" type="button"> Undo </button>
+        <button id="reset" type="button"> Reset </button>
+        <button id="equalize" type="button"> Equalize </button>
+        <button id="log"> Log Transform </button>
+        <button>
+            <a href="{{ url_for('download') }}" download="enhanced_image">Download</a>
+        </button>
+<!--        <button id="download" onclick="window.open('/static/profile_pic.jpg')" type="submit"> Download </button>-->
+
+        <p>Gamma Transformation</p>
+        <p>Gamma <input name="gamma" id="gamma_value" type = "text"/></p>
+        <button id="gamma_sub"> Submit </button>
+
+        <p>Sharpening</p>
+        <p>Alpha <input name="alpha" id="sharpen_value" type = "text"/></p>
+        <p>Beta <input name="beta" id="sharpen_value_2" type = "text"/></p>
+        <button id="sharpen_sub"> Submit </button>
+
+        <p>Blurring</p>
+        <p>Kernel Size <input name="window" id="kernel_size" type = "text"/></p>
+        <p>Sigma <input name="sig" id="sigma" type = "text"/></p>
+        <button id="blur_sub"> Submit </button>
+
+        <p>Median Filtering</p>
+        <p>Window Size <input name="window" id="window_size_median" type = "text"/></p>
+        <button id="median_sub"> Submit </button>
+        <script>
+            $(document).ready(function() {
+               $('#equalize').click(function(){
+                   $.ajax({
+                   url: "{{ url_for ('histogram_equalization', filename = filename) }}",
+                   type: "POST",
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                  },
+                  error: function(xhr) {
+                    //Do Something to handle error
+                    console.log('Error in Histogram Equalization')
+                 }
+                 });
+               });
+
+               $('#log').click(function(){
+                   $.ajax({
+                   url: "{{ url_for ('log_transform', filename = filename) }}",
+                   type: "POST",
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                  },
+                  error: function(xhr) {
+                    //Do Something to handle error
+                    console.log('Error in Log Transformation')
+                 }
+                 });
+               });
+
+               $('#sharpen_sub').click(function(){
+                var alpha = document.getElementById('sharpen_value').value;
+                var beta = document.getElementById('sharpen_value_2').value;
+
+                if(alpha != '' && beta != ''){
+                   $.ajax({
+                   url: "{{ url_for ('sharpening', filename = filename) }}",
+                   type: "POST",
+                   data: { alpha: document.getElementById('sharpen_value').value, beta: document.getElementById('sharpen_value_2').value  },
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                  },
+                  error: function(xhr) {
+                    //Do Something to handle error
+                    console.log('Error in Sharpening')
+                 }
+                 });
+                }else{
+                    if(alpha == ''){
+                        alert('Please fill value of alpha');
+                        return false;
+                    }else if(beta == ''){
+                        alert('Please fill value of beta');
+                        return false;
+                    }else if(alpha == '' && beta == ''){
+                        alert('Please fill value of alpha and beta');
+                        return false;
+                    }
+                }
+               });
+
+               $('#gamma_sub').click(function(){
+                var gamma = document.getElementById('gamma_value').value;
+                if(gamma != ''){
+                   $.ajax({
+                   url: "{{ url_for ('gamma_correction', filename = filename) }}",
+                   type: "POST",
+                   data: { gamma:document.getElementById('gamma_value').value},
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                  },
+                  error: function(xhr) {
+                    //Do Something to handle error
+                    console.log('Error in Gamma transformation')
+                 }
+                 });
+                }else{
+                    alert('Please Fill a value for Gamma');
+                    return false;
+                }
+
+               });
+
+               $('#blur_sub').click(function(){
+                var kernel = document.getElementById('kernel_size').value;
+                var sig = document.getElementById('sigma').value;
+
+                if(kernel != '' && sig != ''){
+                   $.ajax({
+                   url: "{{ url_for ('blurring', filename = filename) }}",
+                   type: "POST",
+                   data: { kernel_size:document.getElementById('kernel_size').value, sigma:document.getElementById('sigma').value},
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                   },
+                    error: function(xhr) {
+                    //Do Something to handle error
+                    console.log('Error in Blurring')
+                   }
+                   });
+                  }else{
+                    if(kernel == ''){
+                        alert('Please fill value of kernel');
+                        return false;
+                    }else if(sig == ''){
+                        alert('Please fill value of sig');
+                        return false;
+                    }else if(kernel == '' && sig == ''){
+                        alert('Please fill value of kernel and sig');
+                        return false;
+                    }
+                }
+               });
+
+               $('#median_sub').click(function(){
+                 var window_size_median_val = document.getElementById('window_size_median').value;
+                 if(window_size_median_val != ''){
+                   $.ajax({
+                   url: "{{ url_for ('median_filtering', filename = filename) }}",
+                   type: "POST",
+                   data: { window_size_median:document.getElementById('window_size_median').value},
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                  },
+                      error: function(xhr) {
+                        //Do Something to handle error
+                        console.log('Error in Median Filtering')
+                     }
+                  });
+                 }else{
+                    alert('Please fill the value for window_size_median');
+                    return false;
+                 }
+               });
+
+               $('#reset').click(function(){
+                   $.ajax({
+                   url: "{{ url_for ('reset')}}",
+                   type: "GET",
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                  },
+                  error: function(xhr) {
+                    //Do Something to handle error
+                    console.log('Error in Reset')
+                 }
+                 });
+               });
+
+               $('#undo').click(function(){
+                   $.ajax({
+                   url: "{{ url_for ('undo')}}",
+                   type: "GET",
+                   success: function(response) {
+                       $("#image").attr('src', "/display/" + response);
+                  },
+                  error: function(xhr) {
+                    //Do Something to handle error
+                    console.log('Error in Undo')
+                 }
+                 });
+               });
+            });
+        </script>
     </div>
     {% endif %}
 </div>
